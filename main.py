@@ -18,8 +18,6 @@ if __name__ == "__main__":
 
     print("Dimensione: " + str(dimension))
 
-    exit(0)
-
     # Initialize the SDK
     llama = LlamaAPI("LL-EWtbxl8qK56y1VUlIGbgkK1inbLZaTEyh6TuBsZgSdMR1znho1f9pcX22bnvMwJG")
 
