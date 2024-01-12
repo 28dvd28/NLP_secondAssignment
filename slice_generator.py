@@ -70,7 +70,8 @@ def cosine_distance(vector1, vector2):
 def generate_slice(text: str , bow: dict):
 
     # the generation of a slice starts from the sentence tokenisation of the input text and then
-    # each slice will be composed by adding the sentences
+    # each slice will be composed by adding the sentences. Each slice will be saved inside a dictionary 
+    # where the key is the slice and the value is it correspondent vector
     text_slices = {}
     text_in_sentence = sent_tokenize(text)
 
