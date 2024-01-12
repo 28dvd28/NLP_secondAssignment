@@ -4,6 +4,8 @@ from nltk.tokenize import word_tokenize
 from tqdm import tqdm
 from slice_generator import sliceGenerator
 
+
+# this function simply eliminate all the files previously obtained inside the output folder
 def clear_output_folder():
     lista_file = os.listdir("output")
     for file in lista_file:
@@ -14,11 +16,14 @@ def clear_output_folder():
         except Exception as e:
             print(f"Errore durante l'eliminazione del file {file}: {e}")
 
+# the function that get the slices saved inside a list and send one by one to the LLM 
+# After getting the response he save in the correspondent file the slice and the correspondent response
+# all inside the output folder of course
 def send_to_LLM(slice_computed):
+
     llama = LlamaAPI("LL-EWtbxl8qK56y1VUlIGbgkK1inbLZaTEyh6TuBsZgSdMR1znho1f9pcX22bnvMwJG")
 
-
-    barra = tqdm(total=len(slice_computed), desc='Invio slice a LLama', position=0, leave=False)
+    barra = tqdm(total=len(slice_computed), desc='Invio slice a LLama', position=0, leave=False) # just a progress bar used to show that the software is still running
     for j in range(len(slice_computed)):
 
         slice = slice_computed[j]
@@ -28,7 +33,7 @@ def send_to_LLM(slice_computed):
             file.write(slice)
 
             input_string = slice
-            # Build the API request
+            # Building of the API request just sending the slice as it is
             api_request_json = {
                 "messages": [
                     {"role": "user", "content": input_string},
@@ -36,13 +41,13 @@ def send_to_LLM(slice_computed):
                 "stream": False,
             }
 
-            # Execute the Request
+            # Execute the Request and in case getting an error, print the error
             try:
                 response = llama.run(api_request_json)
                 response_string = "\n\n\nRESPONSE:\n" + response.json()["choices"][0]["message"]["content"]
                 file.write(response_string)
-            except LlamaAPI.JSONDecodeError:
-                response_string = "\n\n\nRESPONSE:\n" + "error"
+            except Exception as e:
+                response_string = "\n\n\nRESPONSE:\n" + "\nerror: \n\n" + str(e)
                 file.write(response_string)
 
         barra.update(1)
@@ -56,6 +61,8 @@ if __name__ == "__main__":
 
     clear_output_folder()
     
+    # initialization of the sliceGenrator and conseguent slice computing, then are also calculated 
+    # all the data about the tokens and the overlapping and output of all the information
     slice_generator = sliceGenerator(text)
     slice_computed = slice_generator.sliced_text
 
@@ -70,4 +77,4 @@ if __name__ == "__main__":
 
     send_to_LLM(slice_computed)
     
-    print("Slice e rispettive risposte visualizzabili all'interno della cartella output")
+    print("Slice and the correspondent response can be found inside the output folder")

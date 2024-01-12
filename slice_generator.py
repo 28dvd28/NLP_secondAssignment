@@ -9,7 +9,8 @@ import threading
 from tqdm import tqdm
 
 
-
+# a function used just to output on the terminal a rotating symbol to
+# show that the software is still computing
 def rotaing_symbol():
     global terminate_rotating_symbol
     symbol = ['|', '/', '-', '\\']
@@ -20,6 +21,9 @@ def rotaing_symbol():
         time.sleep(0.1)
         i += 1
 
+# function that extract from a inputn text the important word 
+# eliminating all the symbol, the stopwords and making the tokenization and also
+# the lemmatization
 def text_elaboration(text):
 
     punctuation = "!#$%&()*+,-./:;<=>?@[\]^_`{|}~"
@@ -33,6 +37,10 @@ def text_elaboration(text):
 
     return lemmatized_text
 
+
+# given a text and a bag of words it generate a vector where each position 
+# correspond to a word inside the bag of words and contains it's frequency inside the
+# given text. 
 def vectorize_text(text : str, bow: dict ):
 
     lemmatized_text = text_elaboration(text.lower())
@@ -48,15 +56,21 @@ def vectorize_text(text : str, bow: dict ):
 
     return list(vector.values())
 
-
+# function that compute the cosine distance with the 
+# dot operation between the two vectors given in input
 def cosine_distance(vector1, vector2):
     vector1 = np.array(vector1)
     vector2 = np.array(vector2)
     return vector1.dot(vector2) / ( np.linalg.norm(vector1) * np.linalg.norm(vector2) )
     
-
+# function that given a text, it generate the slice in such a way that the total number of tokens
+# of this slice are more or equals number of the tokens of the original text. The threshold is 0.8
+# so each text which cosine distance is < than this value is considered different enough. This threshold 
+# will be increased if at the end of the loop the tokens are still less than in the orginal text
 def generate_slice(text: str , bow: dict):
 
+    # the generation of a slice starts from the sentence tokenisation of the input text and then
+    # each slice will be composed by adding the sentences
     text_slices = {}
     text_in_sentence = sent_tokenize(text)
 
@@ -70,39 +84,54 @@ def generate_slice(text: str , bow: dict):
             
             sentence = text_in_sentence[i]
 
+            # if the slice is still too small i just add the sentence and update the newslice_size
+            #variable containing the number of tokens inside the slice
             if newslice_size + len(word_tokenize(sentence)) <= 2000:
                 newslice = newslice + " " + sentence
-                newslice_size += len(word_tokenize(sentence))            
+                newslice_size += len(word_tokenize(sentence)) 
+            # otherwise i will look if the slice is different enough
+            # from the previous and in case i will save it           
             else:
-                i -= 1
-                current_slice_vector = vectorize_text(newslice, bow)
+                i -= 1 # i will put i to the previous value so at the next iteration i will reconsider the current sentence that otherwise will be lost
+                current_slice_vector = vectorize_text(newslice, bow) # get the vector of the current slice
+
+                # if the dict is empty i just add the slice otherwise i do the computation
                 if len(text_slices) == 0:
                     text_slices[newslice] = current_slice_vector
                     newslice = newslice.replace(sent_tokenize(newslice)[0], '')
                     newslice_size = len(word_tokenize(newslice))
                 else:
-                    cosine_distances = []
+                    cosine_distances = [] # vector of the distances from all the others slices
                     for vector in list(text_slices.values()):
-                        cosine_distances.append(cosine_distance(current_slice_vector, vector))
+                        cosine_distances.append(cosine_distance(current_slice_vector, vector)) # compute the cosine_distance
                     
+                    # if there exist a text where the cosine distance is greather than the value
+                    # decided, then i will just remove the first sentence and procede in the composition of my slice
                     if max(cosine_distances)>=cosine_distance_minimum:
                         newslice = newslice.replace(sent_tokenize(newslice)[0], '')
                         newslice_size = len(word_tokenize(newslice))
+                    # otherwise i will save my slice with its correspondent vector and i will remove
+                    # the first sentence because doing so i will get the next slice that maybe will overlap
+                    # but it will not be fully contained inside the previous
                     else:
                         text_slices[newslice] = current_slice_vector
                         newslice = newslice.replace(sent_tokenize(newslice)[0], '')
                         newslice_size = len(word_tokenize(newslice))
 
+        # just add the last sentence that maybe is not been added to the last slice
         if not (text_in_sentence[len(text_in_sentence)-1] in newslice):
             newslice = newslice + " " +text_in_sentence[len(text_in_sentence)-1]
 
-
+        # in this loop the last slice is elaborated in order to make it satisfy
+        # the constraint described at the beginning of the function, basically with a loop
+        # similar to the one used for the other slices
         while True:
-            current_slice_vector = vectorize_text(newslice, bow)
+            current_slice_vector = vectorize_text(newslice, bow) # get the vector
             cosine_distances = []
-            for vector in list(text_slices.values()):
+            for vector in list(text_slices.values()): # compute all the cosine distances
                 cosine_distances.append(cosine_distance(current_slice_vector, vector))
             
+            #check if it is ok or not
             if max(cosine_distances)>=cosine_distance_minimum or len(word_tokenize(newslice))>2000 :
                 newslice = newslice.replace(sent_tokenize(newslice)[0], '')
             else:
@@ -120,6 +149,7 @@ def generate_slice(text: str , bow: dict):
         else:
             cosine_distance_minimum += 0.05
 
+    # then from the dict i just get the slices and return it
     returnList = list(text_slices.keys())
     for i in range(len(returnList)):
         if returnList[i].startswith(" "):
@@ -128,20 +158,26 @@ def generate_slice(text: str , bow: dict):
     return returnList, dimension
 
 
+# function that for all slices computes how much does they overlap.
+# This value is computed as a percentage of the total tokens of the two slice
+# that actualli overlapp with the other text
 def overlapping_tokens(sliced_text : list):
 
     total_overlapping = {}
 
     for i in range(len(sliced_text)-1):
 
-        current = sent_tokenize(sliced_text[i])
-        next = sent_tokenize(sliced_text[i+1])
+        current = sent_tokenize(sliced_text[i]) # tokenization of the first text
+        next = sent_tokenize(sliced_text[i+1]) # tokenization of the next text
 
+        # to know when two slice are overlapping just i consider the begin of the next and
+        # the end of the previous, increasing how many sentence of this consider until
+        # i found that they are equals and that no other occurences are contained
         for j in range(2,min([len(next), len(current)])):
             sub_current = current[len(current)-j+1:]
             sub_next = next[:j]
 
-            if all(x == y for x, y in zip(sub_current, sub_next)):
+            if all(x == y for x, y in zip(sub_current, sub_next)): # when all sentence are equals then i found the overlapping portion
                 if not all(x in sub_next for x in current[0:len(current)-j+1]):
                     s = ""
                     for string in sub_next:
@@ -149,6 +185,7 @@ def overlapping_tokens(sliced_text : list):
                     total_overlapping[f"Slice {i+1} and slice {i+2} overlaps for "]= (200 * len(word_tokenize(s)) / (len(word_tokenize(sliced_text[i])) + len(word_tokenize(sliced_text[i+1]))))
                     break
 
+    # the value returned is a dict where the key says between which slice is computed the correspondent value
     return total_overlapping
 
 
