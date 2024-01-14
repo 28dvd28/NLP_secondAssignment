@@ -13,4 +13,13 @@ In the United States, medical schools began to be set up towards the end of the 
 
 
 RESPONSE:
-Hello! I'm here to assist you with any questions or concerns you might have. What topic would you like to discuss or inquire about? Please feel free to ask me anything.
+Here is the list of all the anatomy types mentioned in your text:
+
+1. Amphibian anatomy
+2. Reptile anatomy
+3. Bird anatomy
+4. Mammal anatomy
+5. Human anatomy
+6. Arthropod anatomy
+
+Please let me know if you have any specific questions or if there's anything else I can help you with.

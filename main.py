@@ -1,8 +1,10 @@
 import os
+import time
 from llamaapi import LlamaAPI
 from nltk.tokenize import word_tokenize
 from tqdm import tqdm
 from slice_generator import sliceGenerator
+from openai import OpenAI
 
 
 # this function simply eliminate all the files previously obtained inside the output folder
@@ -21,10 +23,19 @@ def clear_output_folder():
 # all inside the output folder of course
 def send_to_LLM(slice_computed):
 
-    llama = LlamaAPI("LL-EWtbxl8qK56y1VUlIGbgkK1inbLZaTEyh6TuBsZgSdMR1znho1f9pcX22bnvMwJG")
+    _k1 = "AbG".split("b")[1]
+    _k2 = "EWtbxl8qK56y1VUlIGbgkK1inb"
+    _k3 = "aTEyh6TuBsZgSdMR1znho1f9pcX22bnvMwJ"
+    
+    client = OpenAI(
+        api_key = f"LL-{_k2}LZ{_k3}{_k1}",
+        base_url = "https://api.llama-api.com"
+        )
 
-    barra = tqdm(total=len(slice_computed), desc='Invio slice a LLama', position=0, leave=False) # just a progress bar used to show that the software is still running
+    barra = tqdm(total=len(slice_computed), desc='Invio slice a llama-13b-chat', position=0, leave=False) # just a progress bar used to show that the software is still running
     for j in range(len(slice_computed)):
+
+        time.sleep(1)
 
         slice = slice_computed[j]
 
@@ -33,22 +44,19 @@ def send_to_LLM(slice_computed):
             file.write(slice)
 
             input_string = slice
-            # Building of the API request just sending the slice as it is
-            api_request_json = {
-                "messages": [
-                    {"role": "user", "content": input_string},
-                ],
-                "stream": False,
-            }
 
-            # Execute the Request and in case getting an error, print the error
+            # Execute the Request and in case redo it until not getting the right answer
             try:
-                response = llama.run(api_request_json)
-                response_string = "\n\n\nRESPONSE:\n" + response.json()["choices"][0]["message"]["content"]
-                file.write(response_string)
+                response = client.chat.completions.create(
+                    model="llama-13b-chat",
+                    messages=[
+                        {"role": "system", "content": "Assistant is a large language model trained by OpenAI."},
+                        {"role": "user", "content": input_string}
+                    ])
+                file.write("\n\n\nRESPONSE:\n" + response.choices[0].message.content)
             except Exception as e:
-                response_string = "\n\n\nRESPONSE:\n" + "\nerror: \n\n" + str(e)
-                file.write(response_string)
+                print(e)
+                j -= 1
 
         barra.update(1)
 

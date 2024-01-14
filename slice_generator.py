@@ -154,7 +154,7 @@ def generate_slice(text: str , bow: dict):
     returnList = list(text_slices.keys())
     for i in range(len(returnList)):
         if returnList[i].startswith(" "):
-            returnList[i] =returnList[i][1:]
+            returnList[i] =returnList[i].lstrip()
 
     return returnList, dimension
 
