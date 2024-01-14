@@ -4,7 +4,7 @@ from nltk.tokenize import word_tokenize
 from tqdm import tqdm
 from slice_generator import sliceGenerator
 from openai import OpenAI
-
+from dotenv import load_dotenv
 
 # this function simply eliminate all the files previously obtained inside the output folder
 def clear_output_folder():
@@ -22,14 +22,10 @@ def clear_output_folder():
 # all inside the output folder of course
 def send_to_LLM(slice_computed):
 
-    # just some offuscation for the key
-    _k1 = "Abo7w5".split("b")[1]
-    _k2 = "swfThG3nCjgo3csvJGQwvT"
-    _k3 = "Ay6xFwcOftNdgKlWpgmPaIimjFAL9s2G3sW4"
-    _call = lambda x: x + _k1
+    load_dotenv()
 
     client = OpenAI(
-        api_key = _call(f"LL-{_k2}Jj{_k3}"),
+        api_key = os.getenv("LLAMA-KEY"),
         base_url = "https://api.llama-api.com"
         )
 
