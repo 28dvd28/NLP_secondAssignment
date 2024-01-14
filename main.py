@@ -1,6 +1,5 @@
 import os
 import time
-from llamaapi import LlamaAPI
 from nltk.tokenize import word_tokenize
 from tqdm import tqdm
 from slice_generator import sliceGenerator
@@ -23,16 +22,18 @@ def clear_output_folder():
 # all inside the output folder of course
 def send_to_LLM(slice_computed):
 
-    _k1 = "AbG".split("b")[1]
-    _k2 = "EWtbxl8qK56y1VUlIGbgkK1inb"
-    _k3 = "aTEyh6TuBsZgSdMR1znho1f9pcX22bnvMwJ"
-    
+    # just some offuscation for the key
+    _k1 = "Abo7w5".split("b")[1]
+    _k2 = "swfThG3nCjgo3csvJGQwvT"
+    _k3 = "Ay6xFwcOftNdgKlWpgmPaIimjFAL9s2G3sW4"
+    _call = lambda x: x + _k1
+
     client = OpenAI(
-        api_key = f"LL-{_k2}LZ{_k3}{_k1}",
+        api_key = _call(f"LL-{_k2}Jj{_k3}"),
         base_url = "https://api.llama-api.com"
         )
 
-    barra = tqdm(total=len(slice_computed), desc='Invio slice a llama-13b-chat', position=0, leave=False) # just a progress bar used to show that the software is still running
+    barra = tqdm(total=len(slice_computed), desc='Invio slice a llama-70b-chat', position=0, leave=False) # just a progress bar used to show that the software is still running
     for j in range(len(slice_computed)):
 
         time.sleep(1)
@@ -48,15 +49,14 @@ def send_to_LLM(slice_computed):
             # Execute the Request and in case redo it until not getting the right answer
             try:
                 response = client.chat.completions.create(
-                    model="llama-13b-chat",
+                    model="llama-70b-chat",
                     messages=[
                         {"role": "system", "content": "Assistant is a large language model trained by OpenAI."},
                         {"role": "user", "content": input_string}
                     ])
                 file.write("\n\n\nRESPONSE:\n" + response.choices[0].message.content)
             except Exception as e:
-                print(e)
-                j -= 1
+                file.write("\n\n\nRESPONSE:\n" + str(e))
 
         barra.update(1)
 
@@ -64,10 +64,26 @@ def send_to_LLM(slice_computed):
 
 if __name__ == "__main__":
 
-    with open("input_text_to_slice.txt", 'r', encoding='utf-8') as file:
+    while True:
+        file_name = os.path.join("input", input(">>>Insert the name of the file to be sliced: "))
+        if not os.path.exists(file_name):
+            print(f">>>File not found")
+        else:
+            break
+
+    with open(file_name, 'r', encoding='utf-8') as file:
         text = file.read()
 
     clear_output_folder()
+
+    #if the output is under the context window then it is send as it is
+    if len(word_tokenize(text))<2000:
+        slice_computed = [text]
+        print("The slice fits the context window so it will be sent as it is to the LLM")
+        send_to_LLM(slice_computed)
+        print("Slice and the correspondent response can be found inside the output folder")
+        exit()
+
     
     # initialization of the sliceGenrator and conseguent slice computing, then are also calculated 
     # all the data about the tokens and the overlapping and output of all the information

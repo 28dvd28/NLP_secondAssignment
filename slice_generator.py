@@ -6,7 +6,6 @@ from nltk.tokenize import word_tokenize
 from nltk.tokenize import sent_tokenize
 import numpy as np 
 import threading
-from tqdm import tqdm
 
 
 # a function used just to output on the terminal a rotating symbol to
@@ -87,7 +86,7 @@ def generate_slice(text: str , bow: dict):
 
             # if the slice is still too small i just add the sentence and update the newslice_size
             #variable containing the number of tokens inside the slice
-            if newslice_size + len(word_tokenize(sentence)) <= 2000:
+            if newslice_size + len(word_tokenize(sentence)) < 2048:
                 newslice = newslice + " " + sentence
                 newslice_size += len(word_tokenize(sentence)) 
             # otherwise i will look if the slice is different enough
@@ -133,7 +132,7 @@ def generate_slice(text: str , bow: dict):
                 cosine_distances.append(cosine_distance(current_slice_vector, vector))
             
             #check if it is ok or not
-            if max(cosine_distances)>=cosine_distance_minimum or len(word_tokenize(newslice))>2000 :
+            if max(cosine_distances)>=cosine_distance_minimum or len(word_tokenize(newslice)) >= 2048 :
                 newslice = newslice.replace(sent_tokenize(newslice)[0], '')
             else:
                 text_slices[newslice] = current_slice_vector
@@ -145,7 +144,7 @@ def generate_slice(text: str , bow: dict):
         for slice in list(text_slices.keys()):
             dimension[0] += len(word_tokenize(slice)) 
         
-        if dimension[0] >= dimension[1]:
+        if dimension[0] >= dimension[1] or cosine_distance_minimum >= 0.95:
             break
         else:
             cosine_distance_minimum += 0.05
