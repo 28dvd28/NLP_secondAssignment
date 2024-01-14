@@ -20,7 +20,8 @@ def rotaing_symbol():
         time.sleep(0.1)
         i += 1
 
-# function that extract from a inputn text the important word 
+
+# function that extract from a input text the important word 
 # eliminating all the symbol, the stopwords and making the tokenization and also
 # the lemmatization
 def text_elaboration(text):
@@ -38,8 +39,8 @@ def text_elaboration(text):
 
 
 # given a text and a bag of words it generate a vector where each position 
-# correspond to a word inside the bag of words and contains it's frequency inside the
-# given text. 
+# correspond to a word inside the bag of words and the value contains
+# its frequency inside the given slice. 
 def vectorize_text(text : str, bow: dict ):
 
     lemmatized_text = text_elaboration(text.lower())
@@ -55,6 +56,7 @@ def vectorize_text(text : str, bow: dict ):
 
     return list(vector.values())
 
+
 # function that compute the cosine distance with the 
 # dot operation between the two vectors given in input
 def cosine_distance(vector1, vector2):
@@ -62,9 +64,10 @@ def cosine_distance(vector1, vector2):
     vector2 = np.array(vector2)
     return vector1.dot(vector2) / ( np.linalg.norm(vector1) * np.linalg.norm(vector2) )
     
+
 # function that given a text, it generate the slice in such a way that the total number of tokens
-# of this slice are more or equals number of the tokens of the original text. The threshold is 0.8
-# so each text which cosine distance is < than this value is considered different enough. This threshold 
+# of this slice are more or equals than the number of the tokens of the original text. The threshold is 0.8
+# so each two texts which cosine similarity is < 0.8  are considered different enough. This threshold 
 # will be increased if at the end of the loop the tokens are still less than in the orginal text
 def generate_slice(text: str , bow: dict):
 
@@ -85,7 +88,7 @@ def generate_slice(text: str , bow: dict):
             sentence = text_in_sentence[i]
 
             # if the slice is still too small i just add the sentence and update the newslice_size
-            #variable containing the number of tokens inside the slice
+            # variable containing the number of tokens inside the slice
             if newslice_size + len(word_tokenize(sentence)) < 2048:
                 newslice = newslice + " " + sentence
                 newslice_size += len(word_tokenize(sentence)) 
@@ -140,6 +143,7 @@ def generate_slice(text: str , bow: dict):
 
         # count how many tokens are in total for all the slice generated and in the orginal text
         # if the amount of tokens in the slice are more or equal than the original text i will terminate
+        # otherwise the threshold will be increased
         dimension = [0, len(word_tokenize(text))]
         for slice in list(text_slices.keys()):
             dimension[0] += len(word_tokenize(slice)) 
@@ -170,7 +174,7 @@ def overlapping_tokens(sliced_text : list):
         current = sent_tokenize(sliced_text[i]) # tokenization of the first text
         next = sent_tokenize(sliced_text[i+1]) # tokenization of the next text
 
-        # to know when two slice are overlapping just i consider the begin of the next and
+        # to know when two slice are overlapping, i consider the begin of the next and
         # the end of the previous, increasing how many sentence of this consider until
         # i found that they are equals and that no other occurences are contained
         for j in range(2,min([len(next), len(current)])):

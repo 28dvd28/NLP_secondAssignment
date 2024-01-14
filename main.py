@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 from nltk.tokenize import word_tokenize
 from tqdm import tqdm
@@ -22,6 +23,8 @@ def clear_output_folder():
 # all inside the output folder of course
 def send_to_LLM(slice_computed):
 
+    print("Sending slice to the LLM")
+
     load_dotenv()
 
     client = OpenAI(
@@ -29,10 +32,14 @@ def send_to_LLM(slice_computed):
         base_url = "https://api.llama-api.com"
         )
 
-    barra = tqdm(total=len(slice_computed), desc='Invio slice a llama-70b-chat', position=0, leave=False) # just a progress bar used to show that the software is still running
-    for j in range(len(slice_computed)):
+    j=0
+    error = False
+    while j < len(slice_computed):
 
-        time.sleep(1)
+        time.sleep(1) # waiting time to avoid problems with LLM
+
+        if not error:
+            print(f"    Sending slice {j+1}", end='\r')
 
         slice = slice_computed[j]
 
@@ -50,13 +57,18 @@ def send_to_LLM(slice_computed):
                         {"role": "system", "content": "Assistant is a large language model trained by OpenAI."},
                         {"role": "user", "content": input_string}
                     ])
-                file.write("\n\n\nRESPONSE:\n" + response.choices[0].message.content)
             except Exception as e:
-                file.write("\n\n\nRESPONSE:\n" + str(e))
+                print(f"    Retrying slice {j} after error: {e}", end='\r')
+                error = True
+                continue
 
-        barra.update(1)
+            file.write("\n\n\nRESPONSE:\n" + response.choices[0].message.content)    
 
-    barra.close()
+        j += 1
+        error = False
+
+
+
 
 if __name__ == "__main__":
 
@@ -73,7 +85,7 @@ if __name__ == "__main__":
     clear_output_folder()
 
     #if the output is under the context window then it is send as it is
-    if len(word_tokenize(text))<2000:
+    if len(word_tokenize(text))<2048:
         slice_computed = [text]
         print("The slice fits the context window so it will be sent as it is to the LLM")
         send_to_LLM(slice_computed)
@@ -81,7 +93,7 @@ if __name__ == "__main__":
         exit()
 
     
-    # initialization of the sliceGenrator and conseguent slice computing, then are also calculated 
+    # initialization of the sliceGenerator and conseguent slice computing, then are also calculated 
     # all the data about the tokens and the overlapping and output of all the information
     slice_generator = sliceGenerator(text)
     slice_computed = slice_generator.sliced_text
@@ -97,4 +109,6 @@ if __name__ == "__main__":
 
     send_to_LLM(slice_computed)
     
-    print("Slice and the correspondent response can be found inside the output folder")
+    sys.stdout.write("\x1b[1A")
+    print("Request collected, slice and the correspondent response can be found inside the output folder")
+    print("                                                                                             ")
